@@ -1,8 +1,10 @@
 # ros2
 
-This role installs [ROS 2](http://www.ros2.org/) following [this page](https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html).
+This role installs [ROS 2](http://www.ros2.org/) following [this page](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html).
 
 Additional steps may be needed depending on the `rosdistro` you choose.
+
+To prevent the update of the ROS 2 packages, if ros-`distro`-desktop is held, the installation process for the packages will be skipped and output warning.
 
 <!-- TODO: Add these steps to the role if Humble requires. -->
 
@@ -16,21 +18,23 @@ $ apt-cache policy | grep universe
 
 ## Inputs
 
-| Name              | Required | Description                                      |
-| ----------------- | -------- | ------------------------------------------------ |
-| rosdistro         | true     | The ROS distro.                                  |
-| installation_type | false    | The installation type (`desktop` or `ros-base`). |
+| Name                   | Required | Description                                      |
+| ---------------------- | -------- | ------------------------------------------------ |
+| rosdistro              | true     | The ROS distro.                                  |
+| ros2_installation_type | false    | The installation type (`desktop` or `ros-base`). |
 
 ## Manual Installation
 
-The `installation_type` variable can also be found in:
+The `ros2_installation_type` variable can also be found in:
 [./defaults/main.yaml](./defaults/main.yaml)
 
 For Universe, the `rosdistro` variable can also be found in:
 [../../playbooks/universe.yaml](../../playbooks/universe.yaml)
 
 ```bash
-# Taken from: https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html
+wget -O /tmp/amd64.env https://raw.githubusercontent.com/autowarefoundation/autoware/main/amd64.env && source /tmp/amd64.env
+
+# Taken from: https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html
 
 # You will need to add the ROS 2 apt repository to your system. First, make sure that the Ubuntu Universe repository is enabled by checking the output of this command.
 apt-cache policy | grep universe
@@ -55,9 +59,8 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-a
 sudo apt update
 
 # Desktop Install
-rosdistro=galactic
-installation_type=desktop
-sudo apt install ros-${rosdistro}-${installation_type}
+ros2_installation_type=desktop
+sudo apt install ros-${rosdistro}-${ros2_installation_type}
 
 # Environment setup
 # (Optional) You can source ros2 in the ~/.bashrc file.

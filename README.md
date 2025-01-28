@@ -1,7 +1,56 @@
 # Autoware - the world's leading open-source software project for autonomous driving
 
 ![Autoware_RViz](https://user-images.githubusercontent.com/63835446/158918717-58d6deaf-93fb-47f9-891d-e242b02cba7b.png)
-[![Discord](https://img.shields.io/discord/953808765935816715?label=Autoware%20Discord&style=for-the-badge)](https://discord.gg/Q94UsPvReQ)
+
+<!--- Contributors -->
+<p align="center">
+    <a href="https://github.com/autowarefoundation/autoware.universe/graphs/contributors">
+        <img src="https://img.shields.io/github/contributors/autowarefoundation/autoware.universe?style=flat&label=Autoware%20Universe%20Contributors"
+            alt="Autoware Universe Contributors" /></a>
+    <a href="https://github.com/autowarefoundation/autoware/graphs/contributors">
+        <img src="https://img.shields.io/github/contributors/autowarefoundation/autoware?style=flat&label=Autoware%20Contributors"
+            alt="Autoware Contributors" /></a>
+</p>
+
+<!--- Commit Activity -->
+<p align="center">
+    <a href="https://github.com/autowarefoundation/autoware.universe/pulse">
+        <img src="https://img.shields.io/github/commit-activity/m/autowarefoundation/autoware.universe?style=flat&label=Autoware%20Universe%20Commit%20Activity"
+            alt="Autoware Universe Activity" /></a>
+    <a href="https://github.com/autowarefoundation/autoware/pulse">
+        <img src="https://img.shields.io/github/commit-activity/m/autowarefoundation/autoware?style=flat&label=Autoware%20Commit%20Activity"
+            alt="Autoware Activity" /></a>
+</p>
+
+<!--- License -->
+<p align="center">
+    <a href="https://github.com/autowarefoundation/autoware/blob/main/LICENSE">
+        <img src="https://img.shields.io/github/license/autowarefoundation/autoware?style=flat&label=License"
+            alt="License" /></a>
+</p>
+
+<!--- CI Reports -->
+<p align="center">
+    <a href="https://github.com/autowarefoundation/autoware/actions/workflows/health-check.yaml?query=branch%3Amain">
+        <img src="https://img.shields.io/github/actions/workflow/status/autowarefoundation/autoware/health-check.yaml?style=flat&label=health-check"
+            alt="health-check CI" /></a>
+    <a href="https://app.codecov.io/gh/autowarefoundation/autoware.universe">
+        <img src="https://img.shields.io/codecov/c/gh/autowarefoundation/autoware.universe?style=flat&label=Coverage&logo=codecov&logoColor=white"
+            alt="Code Coverage" /></a>
+</p>
+
+<!--- Social Media -->
+<p align="center">
+    <a href="https://discord.gg/Q94UsPvReQ">
+        <img src="https://img.shields.io/discord/953808765935816715?logo=discord&logoColor=white&style=flat&label=Autoware%20Discord"
+            alt="Autoware Discord"></a>
+    <a href="https://twitter.com/intent/follow?screen_name=AutowareFdn">
+        <img src="https://img.shields.io/twitter/follow/AutowareFdn?logo=x&logoColor=white&style=flat"
+            alt="Autoware Twitter / X"></a>
+    <a href="https://www.linkedin.com/company/the-autoware-foundation/">
+        <img src="https://img.shields.io/badge/Linkedin-Autoware%20Foundation-0a66c2?logo=linkedin&logoColor=white&style=flat"
+            alt="Autoware Linkedin"></a>
+</p>
 
 Autoware is an open-source software stack for self-driving vehicles, built on the [Robot Operating System (ROS)](https://www.ros.org/). It includes all of the necessary functions to drive an autonomous vehicles from localization and object detection to route planning and control, and was created with the aim of enabling as many individuals and organizations as possible to contribute to open innovations in autonomous driving technology.
 
@@ -36,7 +85,7 @@ To learn more about using or developing Autoware, refer to the [Autoware documen
 
 ## Using Autoware.AI
 
-If you wish to use Autoware.AI, the previous version of Autoware based on ROS 1, switch to [autoware-ai](https://github.com/autowarefoundation/autoware.ai/tree/autoware-ai) branch. However, be aware that Autoware.AI will reach the end-of-life by the end of 2022, and we strongly recommend transitioning to Autoware Core/Universe for future use.
+If you wish to use Autoware.AI, the previous version of Autoware based on ROS 1, switch to [autoware-ai](https://github.com/autowarefoundation/autoware_ai) repository. However, be aware that Autoware.AI has reached the end-of-life as of 2022, and we strongly recommend transitioning to Autoware Core/Universe for future use.
 
 ## Contributing
 
@@ -49,3 +98,4 @@ If you wish to use Autoware.AI, the previous version of Autoware based on ROS 1,
 
 - [Autoware Foundation homepage](https://www.autoware.org/)
 - [Support guidelines](https://autowarefoundation.github.io/autoware-documentation/main/support/support-guidelines/)
+- [CI metrics](https://autowarefoundation.github.io/autoware-ci-metrics/)

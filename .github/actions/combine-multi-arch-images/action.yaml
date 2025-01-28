@@ -18,7 +18,7 @@ runs:
 
     - name: Set image name
       id: set-image-name
-      run: echo "::set-output name=image-name::ghcr.io/${{ github.repository_owner }}/${{ inputs.package-name }}"
+      run: echo "image-name=ghcr.io/${{ github.repository_owner }}/${{ inputs.package-name }}" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Get all tags
@@ -48,7 +48,7 @@ runs:
         all_tags=$(printf "%s\n" ${all_tags[@]})
         echo -e "\n[all_tags]\n$all_tags"
 
-        echo "::set-output name=tags::$(printf "%s " $all_tags)"
+        echo "tags=$(printf "%s " $all_tags | sed 's/\s*$//')" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Get base tags
@@ -62,12 +62,12 @@ runs:
         echo -e "\n[arm64_tags]\n$arm64_tags"
         echo -e "\n[base_tags]\n$base_tags"
 
-        echo "::set-output name=tags::$(printf "%s " $base_tags)"
+        echo "tags=$(printf "%s " $base_tags | sed 's/\s*$//')" >> $GITHUB_OUTPUT
       env:
         ALL_TAGS: ${{ steps.get-all-tags.outputs.tags }}
       shell: bash
 
-    - name: Create Docker manifest
+    - name: Create Docker manifest and delete -amd64 and -arm64 tags
       run: |
         for base_tag in $BASE_TAGS; do
           echo -e "\nbase_tag: $base_tag"
@@ -82,24 +82,35 @@ runs:
             amd64_image="${{ steps.set-image-name.outputs.image-name }}:$amd64_tag"
           else
             echo "No amd64 tag found for '$base_tag'."
-            amd64_image=""
+            continue
           fi
 
           if [ "$arm64_tag" != "" ]; then
             arm64_image="${{ steps.set-image-name.outputs.image-name }}:$arm64_tag"
           else
             echo "No arm64 tag found for '$base_tag'."
-            arm64_image=""
+            continue
           fi
 
           echo "amd64_image: $amd64_image"
           echo "arm64_image: $arm64_image"
 
-          docker manifest create ${{ steps.set-image-name.outputs.image-name }}:$base_tag \
+          if docker manifest create ${{ steps.set-image-name.outputs.image-name }}:$base_tag \
             $amd64_image \
-            $arm64_image
+            $arm64_image; then
 
-          docker manifest push ${{ steps.set-image-name.outputs.image-name }}:$base_tag
+            docker manifest push ${{ steps.set-image-name.outputs.image-name }}:$base_tag
+
+            # Delete amd64_image and arm64_image
+            curl -X DELETE \
+              -H "Authorization: Bearer ${{ github.token }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${{ inputs.package-name }}/versions/$amd64_tag
+            curl -X DELETE \
+              -H "Authorization: Bearer ${{ github.token }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${{ inputs.package-name }}/versions/$arm64_tag
+          fi
         done
       env:
         ALL_TAGS: ${{ steps.get-all-tags.outputs.tags }}

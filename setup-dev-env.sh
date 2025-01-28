@@ -1,16 +1,40 @@
 #!/usr/bin/env bash
 # Set up development environment for Autoware Core/Universe.
-# Usage: setup-dev-env.sh <installation_type('core' or 'universe')> [-y] [-v] [--no-nvidia]
+# Usage: setup-dev-env.sh <ros2_installation_type('core' or 'universe')> [-y] [-v] [--no-nvidia]
 # Note: -y option is only for CI.
 
 set -e
+
+# Function to print help message
+print_help() {
+    echo "Usage: setup-dev-env.sh [OPTIONS]"
+    echo "Options:"
+    echo "  --help          Display this help message"
+    echo "  -h              Display this help message"
+    echo "  -y              Use non-interactive mode"
+    echo "  -v              Enable debug outputs"
+    echo "  --no-nvidia     Disable installation of the NVIDIA-related roles ('cuda' and 'tensorrt')"
+    echo "  --no-cuda-drivers Disable installation of 'cuda-drivers' in the role 'cuda'"
+    echo "  --runtime       Disable installation dev package of role 'cuda' and 'tensorrt'"
+    echo "  --data-dir      Set data directory (default: $HOME/autoware_data)"
+    echo "  --download-artifacts"
+    echo "                  Download artifacts"
+    echo "  --module        Specify the module (default: all)"
+    echo ""
+}
 
 SCRIPT_DIR=$(readlink -f "$(dirname "$0")")
 
 # Parse arguments
 args=()
+option_data_dir="$HOME/autoware_data"
+
 while [ "$1" != "" ]; do
     case "$1" in
+    --help | -h)
+        print_help
+        exit 1
+        ;;
     -y)
         # Use non-interactive mode.
         option_yes=true
@@ -26,6 +50,23 @@ while [ "$1" != "" ]; do
     --no-cuda-drivers)
         # Disable installation of 'cuda-drivers' in the role 'cuda'.
         option_no_cuda_drivers=true
+        ;;
+    --runtime)
+        # Disable installation dev package of role 'cuda' and 'tensorrt'.
+        option_runtime=true
+        ;;
+    --data-dir)
+        # Set data directory
+        option_data_dir="$2"
+        shift
+        ;;
+    --download-artifacts)
+        # Set download artifacts option
+        option_download_artifacts=true
+        ;;
+    --module)
+        option_module="$2"
+        shift
         ;;
     *)
         args+=("$1")
@@ -74,7 +115,35 @@ fi
 
 # Check installation of CUDA Drivers
 if [ "$option_no_cuda_drivers" = "true" ]; then
-    ansible_args+=("--extra-vars" "install_cuda_drivers=false")
+    ansible_args+=("--extra-vars" "cuda_install_drivers=false")
+fi
+
+# Check installation of dev package
+if [ "$option_runtime" = "true" ]; then
+    ansible_args+=("--extra-vars" "ros2_installation_type=ros-base") # ROS installation type, default "desktop"
+    ansible_args+=("--extra-vars" "install_devel=N")
+else
+    ansible_args+=("--extra-vars" "install_devel=y")
+fi
+
+# Check downloading artifacts
+if [ "$target_playbook" = "autoware.dev_env.openadkit" ]; then
+    if [ "$option_download_artifacts" = "true" ]; then
+        echo -e "\e[36mArtifacts will be downloaded to $option_data_dir\e[m"
+        ansible_args+=("--extra-vars" "prompt_download_artifacts=y")
+    else
+        ansible_args+=("--extra-vars" "prompt_download_artifacts=N")
+    fi
+elif [ "$option_yes" = "true" ] || [ "$option_download_artifacts" = "true" ]; then
+    echo -e "\e[36mArtifacts will be downloaded to $option_data_dir\e[m"
+    ansible_args+=("--extra-vars" "prompt_download_artifacts=y")
+fi
+
+ansible_args+=("--extra-vars" "data_dir=$option_data_dir")
+
+# Check module option
+if [ "$option_module" != "" ]; then
+    ansible_args+=("--extra-vars" "module=$option_module")
 fi
 
 # Load env
@@ -102,22 +171,21 @@ if ! (command -v git >/dev/null 2>&1); then
 fi
 
 # Install pip for ansible
-if ! (command -v pip3 >/dev/null 2>&1); then
+if ! (python3 -m pip --version >/dev/null 2>&1); then
     sudo apt-get -y update
-    sudo apt-get -y install python3-pip
+    sudo apt-get -y install python3-pip python3-venv
+fi
+
+# Install pipx for ansible
+if ! (python3 -m pipx --version >/dev/null 2>&1); then
+    sudo apt-get -y update
+    python3 -m pip install --user pipx
 fi
 
 # Install ansible
-ansible_version=$(pip3 list | grep -oP "^ansible\s+\K([0-9]+)" || true)
-if [ "$ansible_version" != "6" ]; then
-    sudo apt-get -y purge ansible
-    pip3 install -U "ansible==6.*"
-    # Workaround for https://github.com/autowarefoundation/autoware/issues/2849
-    pip3 install -U "pyOpenSSL>=22.0.0"
-fi
-
-# For Python packages installed with user privileges
-export PATH="$HOME/.local/bin:$PATH"
+python3 -m pipx ensurepath
+export PATH="${PIPX_BIN_DIR:=$HOME/.local/bin}:$PATH"
+pipx install --include-deps --force "ansible==6.*"
 
 # Install ansible collections
 echo -e "\e[36m"ansible-galaxy collection install -f -r "$SCRIPT_DIR/ansible-galaxy-requirements.yaml" "\e[m"
