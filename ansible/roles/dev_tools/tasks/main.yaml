@@ -36,24 +36,3 @@
     name: golang
     state: latest
     update_cache: true
-
-- name: Hold check of ros-{{ rosdistro + '-plotjuggler' }}
-  ansible.builtin.command: apt-mark showhold
-  register: held_ros_packages
-  changed_when: false
-
-- name: Install plotjuggler
-  become: true
-  ansible.builtin.apt:
-    name:
-      - ros-{{ rosdistro }}-plotjuggler
-    state: latest
-    update_cache: true
-  when: "'ros-' + rosdistro + '-plotjuggler' not in held_ros_packages.stdout"
-  register: install_result
-  failed_when: false
-
-- name: Display warning if plotjuggler package is held
-  ansible.builtin.debug:
-    msg: ROS package 'ros-{{ rosdistro }}-plotjuggler' is apt-mark hold. Skipping installation.
-  when: not install_result.changed
