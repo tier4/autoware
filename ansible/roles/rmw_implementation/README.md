@@ -1,6 +1,6 @@
 # rmw_implementation
 
-This role sets up ROS 2 RMW implementation following [this page](https://docs.ros.org/en/galactic/How-To-Guides/Working-with-multiple-RMW-implementations.html).
+This role sets up ROS 2 RMW implementation following [this page](https://docs.ros.org/en/humble/How-To-Guides/Working-with-multiple-RMW-implementations.html).
 
 ## Inputs
 
@@ -11,16 +11,23 @@ This role sets up ROS 2 RMW implementation following [this page](https://docs.ro
 
 ## Manual Installation
 
-For Universe, the `rosdistro` and `rmw_implementation` variable can also be found in:
-[../../playbooks/universe.yaml](../../playbooks/universe.yaml)
+## Set up the environment variables
 
 ```bash
-# For details: https://docs.ros.org/en/galactic/How-To-Guides/Working-with-multiple-RMW-implementations.html
-sudo apt update
-rosdistro=galactic
+# Choose your ROS distribution
+rosdistro=humble  # or jazzy
+
+# RMW implementation (see ./defaults/main.yaml for the current default)
 rmw_implementation=rmw_cyclonedds_cpp
-rmw_implementation_dashed=$(eval sed -e "s/_/-/g" <<< "${rmw_implementation}")
-sudo apt install ros-${rosdistro}-${rmw_implementation_dashed}
+```
+
+## Install the RMW implementation
+
+For details: <https://docs.ros.org/en/humble/How-To-Guides/Working-with-multiple-RMW-implementations.html>
+
+```bash
+sudo apt update
+sudo apt install ros-${rosdistro}-${rmw_implementation//_/-}
 
 # (Optional) You set the default RMW implementation in the ~/.bashrc file.
 echo '' >> ~/.bashrc && echo "export RMW_IMPLEMENTATION=${rmw_implementation}" >> ~/.bashrc

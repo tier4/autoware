@@ -1,19 +1,42 @@
-- name: Get dash-case name of rmw_implementation
-  ansible.builtin.shell: bash -c 'sed -e "s/_/-/g" <<< $(echo {{ rmw_implementation }})'
-  register: dash_case_rmw_implementation
+- name: Validate inputs
+  ansible.builtin.assert:
+    that:
+      - rmw_implementation__rosdistro | length > 0
+      - rmw_implementation__name | length > 0
+
+- name: Build target package name
+  ansible.builtin.set_fact:
+    rmw_implementation__pkg: >-
+      ros-{{ rmw_implementation__rosdistro }}-{{ rmw_implementation__name | replace('_', '-') }}
+
+- name: List held packages
+  ansible.builtin.command: apt-mark showhold
+  register: rmw_implementation__held_pkgs
   changed_when: false
 
-- name: Install ros-{{ rosdistro }}-{{ dash_case_rmw_implementation.stdout }}
+- name: Install {{ rmw_implementation__pkg }}
   become: true
   ansible.builtin.apt:
-    name: ros-{{ rosdistro }}-{{ dash_case_rmw_implementation.stdout }}
+    name: "{{ rmw_implementation__pkg }}"
     state: latest
+    allow_downgrade: "{{ use_locked_versions | default(false) | bool }}"
     update_cache: true
+    cache_valid_time: 3600
+  when: rmw_implementation__pkg not in rmw_implementation__held_pkgs.stdout_lines
 
-- name: Add RMW_IMPLEMENTATION to .bashrc
+- name: Ensure RMW_IMPLEMENTATION in user bashrc
   ansible.builtin.lineinfile:
-    dest: ~/.bashrc
-    line: export RMW_IMPLEMENTATION={{ rmw_implementation }}
+    path: "{{ lookup('env', 'HOME') }}/.bashrc"
+    line: export RMW_IMPLEMENTATION={{ rmw_implementation__name }}
     state: present
     create: true
-    mode: 0644
+    mode: "0644"
+
+- name: Ensure RMW_IMPLEMENTATION in skeleton bashrc (for new users)
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/skel/.bashrc
+    line: export RMW_IMPLEMENTATION={{ rmw_implementation__name }}
+    state: present
+    create: true
+    mode: "0644"

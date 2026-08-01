@@ -1,0 +1,13 @@
+- name: Install geographiclib-tools
+  become: true
+  ansible.builtin.apt:
+    name: geographiclib-tools
+    state: latest
+    allow_downgrade: "{{ use_locked_versions | default(false) | bool }}"
+    update_cache: true
+
+- name: Install egm2008-1
+  become: true
+  ansible.builtin.command:
+    cmd: geographiclib-get-geoids egm2008-1
+    creates: /usr/share/GeographicLib/geoids/egm2008-1.pgm

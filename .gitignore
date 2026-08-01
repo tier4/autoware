@@ -10,10 +10,21 @@
 build/
 install/
 log/
-/src/
 
 # Python
 *.pyc
 
 # Jetbrains
 .idea/
+
+# rviz Screen Capture
+capture/
+
+# CodeChecker
+.codechecker/
+
+# Node.js
+node_modules/
+
+# Autoware Index
+repositories/autoware-index.repos

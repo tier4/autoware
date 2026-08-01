@@ -1,0 +1,98 @@
+name: docker-build-and-push
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*.*.*"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  changed-files:
+    runs-on: ubuntu-24.04
+    outputs:
+      should-build: ${{ steps.check.outputs.any_modified == 'true' || steps.last-success.outputs.sha == '' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_type == 'tag') }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Find last successful build commit
+        id: last-success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/docker-build-and-push.yaml/runs?branch=main&status=success&event=push&per_page=1" \
+            --jq '.workflow_runs[0].head_sha // empty')
+
+          if [ -n "$sha" ] && git cat-file -e "$sha" 2>/dev/null; then
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+            echo "Found last successful build at $sha"
+          else
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            echo "No previous successful build found, will force build"
+          fi
+
+      - id: check
+        uses: step-security/changed-files@v47
+        with:
+          base_sha: ${{ steps.last-success.outputs.sha }}
+          files: |
+            docker/**
+            ansible/**
+            ansible-galaxy-requirements.yaml
+            repositories/*.repos
+            .github/workflows/docker-build.yaml
+            .github/workflows/docker-build-pipeline.yaml
+            .github/workflows/docker-build-and-push.yaml
+            .github/workflows/docker-manifest.yaml
+
+  humble-amd64:
+    needs: changed-files
+    if: needs.changed-files.outputs.should-build == 'true'
+    uses: ./.github/workflows/docker-build-pipeline.yaml
+    with:
+      ros-distro: humble
+      platform: amd64
+
+  humble-arm64:
+    needs: changed-files
+    if: needs.changed-files.outputs.should-build == 'true'
+    uses: ./.github/workflows/docker-build-pipeline.yaml
+    with:
+      ros-distro: humble
+      platform: arm64
+
+  humble-manifest:
+    needs: [humble-amd64, humble-arm64]
+    uses: ./.github/workflows/docker-manifest.yaml
+    with:
+      ros-distro: humble
+
+  jazzy-amd64:
+    needs: changed-files
+    if: needs.changed-files.outputs.should-build == 'true'
+    uses: ./.github/workflows/docker-build-pipeline.yaml
+    with:
+      ros-distro: jazzy
+      platform: amd64
+
+  jazzy-arm64:
+    needs: changed-files
+    if: needs.changed-files.outputs.should-build == 'true'
+    uses: ./.github/workflows/docker-build-pipeline.yaml
+    with:
+      ros-distro: jazzy
+      platform: arm64
+
+  jazzy-manifest:
+    needs: [jazzy-amd64, jazzy-arm64]
+    uses: ./.github/workflows/docker-manifest.yaml
+    with:
+      ros-distro: jazzy

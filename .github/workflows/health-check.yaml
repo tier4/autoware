@@ -1,0 +1,48 @@
+name: health-check
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: 0 12 * * *
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  health-check:
+    strategy:
+      fail-fast: false
+      matrix:
+        build-type: [main, nightly, main-arm64, main-jazzy-amd64, main-jazzy-arm64]
+        include:
+          - build-type: main
+            platform: amd64
+            runner: "['ubuntu-24.04']"
+            ros-distro: humble
+          - build-type: nightly
+            platform: amd64
+            runner: "['ubuntu-24.04']"
+            ros-distro: humble
+          - build-type: main-arm64
+            platform: arm64
+            runner: "['ubuntu-24.04-arm']"
+            ros-distro: humble
+          - build-type: main-jazzy-amd64
+            platform: amd64
+            runner: "['ubuntu-24.04']"
+            ros-distro: jazzy
+          - build-type: main-jazzy-arm64
+            platform: arm64
+            runner: "['ubuntu-24.04-arm']"
+            ros-distro: jazzy
+    uses: ./.github/workflows/health-check-reusable.yaml
+    with:
+      build-type: ${{ matrix.build-type }}
+      platform: ${{ matrix.platform }}
+      runner: ${{ matrix.runner }}
+      ros-distro: ${{ matrix.ros-distro }}
+    secrets: inherit

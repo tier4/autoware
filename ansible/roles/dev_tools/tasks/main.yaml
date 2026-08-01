@@ -1,0 +1,62 @@
+# https://github.com/git-lfs/git-lfs/wiki/Installation#debian-and-ubuntu
+- name: Install Git LFS
+  become: true
+  ansible.builtin.apt:
+    name: git-lfs
+    # 'latest' (not 'present') so an already-installed git-lfs converges to the
+    # locked pin; 'present' never changes an installed version, ignoring the pin.
+    state: latest
+    allow_downgrade: "{{ use_locked_versions | default(false) | bool }}"
+    update_cache: true
+
+- name: Setup Git LFS for current user
+  ansible.builtin.command: git lfs install
+  changed_when: false
+
+- name: Install pipx
+  become: true
+  ansible.builtin.apt:
+    name: pipx
+    state: latest
+    allow_downgrade: "{{ use_locked_versions | default(false) | bool }}"
+    update_cache: true
+
+- name: Install pre-commit
+  ansible.builtin.command:
+    cmd: /usr/bin/pipx install pre-commit
+    creates: ~/.local/bin/pre-commit
+
+- name: Install clang-format
+  ansible.builtin.command:
+    cmd: /usr/bin/pipx install clang-format
+    creates: ~/.local/bin/clang-format
+
+- name: Install Go
+  become: true
+  ansible.builtin.apt:
+    name: golang
+    state: latest
+    allow_downgrade: "{{ use_locked_versions | default(false) | bool }}"
+    update_cache: true
+
+- name: Hold check of ros-{{ rosdistro + '-plotjuggler' }}
+  ansible.builtin.command: apt-mark showhold
+  register: dev_tools__held_ros_packages
+  changed_when: false
+
+- name: Install plotjuggler
+  become: true
+  ansible.builtin.apt:
+    name:
+      - ros-{{ rosdistro }}-plotjuggler
+    state: latest
+    allow_downgrade: "{{ use_locked_versions | default(false) | bool }}"
+    update_cache: true
+  when: "'ros-' + rosdistro + '-plotjuggler' not in dev_tools__held_ros_packages.stdout"
+  register: dev_tools__install_result
+  failed_when: false
+
+- name: Display warning if plotjuggler package is held
+  ansible.builtin.debug:
+    msg: ROS package 'ros-{{ rosdistro }}-plotjuggler' is apt-mark hold. Skipping installation.
+  when: not dev_tools__install_result.changed

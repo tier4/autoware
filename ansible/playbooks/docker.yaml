@@ -1,6 +1,0 @@
-- hosts: localhost
-  connection: local
-  roles:
-    - role: autoware.dev_env.docker_engine
-    - role: autoware.dev_env.nvidia_docker
-    - role: autoware.dev_env.rocker

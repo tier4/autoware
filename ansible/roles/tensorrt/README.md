@@ -1,27 +1,58 @@
 # tensorrt
 
-This role installs TensorRT and cuDNN following [this page](https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing).
+This role installs TensorRT following [the official NVIDIA TensorRT Installation Guide](https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing).
 
 ## Inputs
 
 | Name             | Required | Description              |
 | ---------------- | -------- | ------------------------ |
-| cudnn_version    | true     | The version of cuDNN.    |
 | tensorrt_version | true     | The version of TensorRT. |
+
+## Version selection
+
+| Ubuntu         | Architecture                                            | TensorRT version     |
+| -------------- | ------------------------------------------------------- | -------------------- |
+| 22.04 (humble) | x86_64                                                  | 10.8.0.43-1+cuda12.8 |
+| 22.04 (humble) | aarch64 (SBSA)                                          | 10.3.0.26-1+cuda12.5 |
+| 24.04 (jazzy)  | x86_64 / aarch64 (SBSA, incl. Jetson Thor + DRIVE Thor) | 10.13.3.9-1+cuda13.0 |
+
+Override `tensorrt_version` explicitly via `-e tensorrt_version=…` to pin a different release.
 
 ## Manual Installation
 
-For Universe, the `cudnn_version` and `tensorrt_version` variable can also be found in:
-[../../playbooks/universe.yaml](../../playbooks/universe.yaml)
+### Set up the environment variables
 
 ```bash
-# Taken from: https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing
+# From the Autoware repository root:
+# defaults/main.yaml contains an architecture-dependent Jinja2 expression;
+# extract the matching version for this machine.
+if [ "$(uname -m)" = "aarch64" ]; then
+  tensorrt_version=$(grep -oP "'\K[^']+(?=' if)" ansible/roles/tensorrt/defaults/main.yaml)
+else
+  tensorrt_version=$(grep -oP "else '\K[^']+" ansible/roles/tensorrt/defaults/main.yaml)
+fi
+```
 
-cudnn_version="8.2.4.15-1+cuda11.4"
-sudo apt-get install libcudnn8=${cudnn_version} libcudnn8-dev=${cudnn_version}
-sudo apt-mark hold libcudnn8 libcudnn8-dev
+### Install TensorRT
 
-tensorrt_version="8.2.4-1+cuda11.4"
-sudo apt-get install libnvinfer8=${tensorrt_version} libnvonnxparsers8=${tensorrt_version} libnvparsers8=${tensorrt_version} libnvinfer-plugin8=${tensorrt_version} libnvinfer-dev=${tensorrt_version} libnvonnxparsers-dev=${tensorrt_version} libnvparsers-dev=${tensorrt_version} libnvinfer-plugin-dev=${tensorrt_version}
-sudo apt-mark hold libnvinfer8 libnvonnxparsers8 libnvparsers8 libnvinfer-plugin8 libnvinfer-dev libnvonnxparsers-dev libnvparsers-dev libnvinfer-plugin-dev
+```bash
+sudo apt-get install -y \
+libnvinfer10=${tensorrt_version} \
+libnvinfer-plugin10=${tensorrt_version} \
+libnvonnxparsers10=${tensorrt_version} \
+libnvinfer-dev=${tensorrt_version} \
+libnvinfer-plugin-dev=${tensorrt_version} \
+libnvinfer-headers-dev=${tensorrt_version} \
+libnvinfer-headers-plugin-dev=${tensorrt_version} \
+libnvonnxparsers-dev=${tensorrt_version}
+
+sudo apt-mark hold \
+libnvinfer10 \
+libnvinfer-plugin10 \
+libnvonnxparsers10 \
+libnvinfer-dev \
+libnvinfer-plugin-dev \
+libnvonnxparsers-dev \
+libnvinfer-headers-dev \
+libnvinfer-headers-plugin-dev
 ```
